@@ -1,0 +1,60 @@
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files (state should be stored remotely)
+*.tfstate
+*.tfstate.backup
+
+# Crash log files
+crash.log
+
+# Ignore any .env files (for local development, use a secrets manager in production)
+.env
+*.env.*
+
+# Provider and Module Cache
+.terraform
+
+# Ignore any "plan" files that might be generated
+*.tfplan
+
+# Ignore any "destroy" plan files
+*.tfdestroy
+
+# Ignore variable definition files ending in .tfvars or .tfvars.json
+*.tfvars
+*.tfvars.json
+
+# Ignore override files, which are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore files starting with "temp_"
+temp_*
+
+# Ignore files ending with "_backup"
+*_backup
+
+# Ignore IDE-specific files (adjust as needed for your IDE)
+.idea/
+*.swp
+*.swo
+.vscode/
+
+# Ignore generated files or directories used by other tools
+bin/
+dist/
+output/
+
+#Ignore terraform lock file on the local machine
+.terraform.lock.hcl
+
+#Ignore sensitive data files
+secrets.tfvars
+keys.tfvars
+
+#Ignore credential files
+credentials.json
+credentials.txt
