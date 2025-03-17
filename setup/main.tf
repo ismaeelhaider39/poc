@@ -88,3 +88,65 @@ module "aks" {
     azapi = azapi
   }
 }
+
+
+
+
+resource "helm_release" "argocd" {
+  name             = "argocd"
+  repository       = "https://argoproj.github.io/argo-helm"
+  chart            = "argo-cd"
+  namespace        = "argocd"
+  create_namespace = true
+  
+  values = [
+    <<-EOT
+    server:
+      extraArgs:
+        - --insecure
+      service:
+        type: LoadBalancer
+    EOT
+  ]
+}
+
+
+resource "kubernetes_manifest" "argocd_application" {
+  depends_on = [helm_release.argocd]
+
+  manifest = {
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "Application"
+    metadata = {
+      name      = "nginx-application"
+      namespace = "argocd"
+      annotations = {
+        "argocd-image-updater.argoproj.io/image-list" = "nginx=nginx"
+        "argocd-image-updater.argoproj.io/nginx.update-strategy" = "semver"
+        "argocd-image-updater.argoproj.io/nginx.allow-tags" = "regex:^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        "argocd-image-updater.argoproj.io/write-back-method" = "git"
+      }
+    }
+    spec = {
+      project = "default"
+      source = {
+        repoURL        = "https://github.com/ismaeelhaider39/poc.git"  # Replace with your Git repo URL
+        targetRevision = "HEAD"  # Replace with your branch/tag
+        path           = "../app"  # Path to your chart in the repo
+      }
+      destination = {
+        server    = "https://kubernetes.default.svc"
+        namespace = "nginx"
+      }
+      syncPolicy = {
+        automated = {
+          prune    = true
+          selfHeal = true
+        }
+        syncOptions = [
+          "CreateNamespace=true"
+        ]
+      }
+    }
+  }
+}
