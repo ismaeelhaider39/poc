@@ -87,6 +87,7 @@ module "aks" {
   providers = {
     azapi = azapi
   }
+  depends_on = [ azurerm_resource_group.rg ]
 }
 
 
@@ -99,6 +100,10 @@ resource "helm_release" "argocd" {
   namespace        = "argocd"
   create_namespace = true
   
+  set {
+    name  = "crds.install"
+    value = "true"
+  }
   values = [
     <<-EOT
     server:
@@ -110,10 +115,27 @@ resource "helm_release" "argocd" {
   ]
 }
 
+# Resource to check if the Application CRD is ready
+# resource "null_resource" "wait_for_argocd_crd" {
+#   depends_on = [helm_release.argocd]
 
+#   provisioner "local-exec" {
+#     command = <<EOT
+#       until kubectl get crd applications.argoproj.io >/dev/null 2>&1; do
+#         echo "Waiting for ArgoCD CRD to be available..."
+#         sleep 10
+#       done
+#       echo "ArgoCD CRD is available."
+#     EOT
+#   }
+# }
+
+# ArgoCD Application manifest
 resource "kubernetes_manifest" "argocd_application" {
-  depends_on = [helm_release.argocd]
-
+  depends_on = [
+    helm_release.argocd,
+    # null_resource.wait_for_argocd_crd,  # Add dependency on CRD readiness
+  ]
   manifest = {
     apiVersion = "argoproj.io/v1alpha1"
     kind       = "Application"
@@ -132,7 +154,7 @@ resource "kubernetes_manifest" "argocd_application" {
       source = {
         repoURL        = "https://github.com/ismaeelhaider39/poc.git"  # Replace with your Git repo URL
         targetRevision = "HEAD"  # Replace with your branch/tag
-        path           = "../app"  # Path to your chart in the repo
+        path           = "app"  # Path to your chart in the repo
       }
       destination = {
         server    = "https://kubernetes.default.svc"
